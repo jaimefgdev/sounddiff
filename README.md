@@ -4,6 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/sounddiff)](https://pypi.org/project/sounddiff/)
 [![Python](https://img.shields.io/pypi/pyversions/sounddiff)](https://pypi.org/project/sounddiff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![CodeRabbit Reviews](https://img.shields.io/coderabbit/prs/github/systemblueteam/sounddiff?utm_source=oss&utm_medium=github&utm_campaign=systemblueteam%2Fsounddiff&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 
 Structured audio comparison for producers and developers. Think `git diff`, but for audio.
 

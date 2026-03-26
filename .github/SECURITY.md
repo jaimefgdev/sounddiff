@@ -12,7 +12,7 @@ If you discover a security vulnerability, please report it responsibly.
 
 **Do not open a public issue.**
 
-Email security concerns to **hello@systemblue.dev** with:
+Email security concerns to **dev@systemblue.io** with:
 
 1. Description of the vulnerability
 2. Steps to reproduce
