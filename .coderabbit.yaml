@@ -16,7 +16,6 @@ reviews:
     - "!CLAUDE.md"
     - "!docs/**"
     - "!.coderabbit.yaml"
-    - "!.github/**"
     - "!scripts/**"
   path_instructions:
     - path: "src/sounddiff/**/*.py"
