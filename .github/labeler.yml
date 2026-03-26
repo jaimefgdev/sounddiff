@@ -1,0 +1,23 @@
+audio-core:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/sounddiff/loudness.py
+          - src/sounddiff/spectral.py
+          - src/sounddiff/temporal.py
+          - src/sounddiff/detection.py
+
+cli:
+  - changed-files:
+      - any-glob-to-any-file:
+          - src/sounddiff/cli.py
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - docs/**
+          - "*.md"
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file:
+          - tests/**

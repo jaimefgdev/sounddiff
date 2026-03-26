@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+# sounddiff — Python CLI for structured audio comparison
+inheritance: true
+
+reviews:
+  request_changes_workflow: true
+  profile: assertive
+  pre_merge_checks:
+    docstrings:
+      mode: "off"
+    title:
+      mode: warning
+    description:
+      mode: warning
+  path_filters:
+    - "!CLAUDE.md"
+    - "!docs/**"
+    - "!.coderabbit.yaml"
+    - "!.github/**"
+    - "!scripts/**"
+  path_instructions:
+    - path: "src/sounddiff/**/*.py"
+      instructions: |
+        sounddiff is a Python 3.10+ CLI tool for structured audio comparison.
+        Uses numpy, scipy, pyloudnorm for DSP. Click for CLI. Rich for terminal output.
+        mypy strict mode. Ruff for linting and formatting.
+
+        Review priorities (highest to lowest):
+        1. Correctness of DSP algorithms (loudness, spectral, correlation math)
+        2. Type safety (all public functions must have complete type annotations)
+        3. Edge cases in audio processing (empty signals, mono/stereo, different sample rates)
+        4. Performance issues with measurable impact on large audio files
+        5. Error handling (clear messages for file not found, unsupported format, corrupt audio)
+
+        Known patterns, DO NOT flag:
+        - `from __future__ import annotations` at top of every module (PEP 604 unions on 3.10)
+        - `np.ndarray` without generic parameters (numpy typing is limited)
+        - `pyloudnorm` and `soundfile` are untyped (ignore_missing_imports in mypy config)
+        - Frozen dataclasses for all result types (immutability is intentional)
+        - Properties on frozen dataclasses for computed deltas (avoids storing derived values)
+
+        Do NOT flag:
+        - Missing docstrings on private functions (underscore-prefixed)
+        - Import ordering (ruff handles this)
+        - Line length (ruff formatter handles this)
+    - path: "src/sounddiff/cli.py"
+      instructions: |
+        CLI entry point using Click. Review for:
+        - Clear error messages for all failure modes
+        - Correct exit codes (0 success, 1 for errors)
+        - No unhandled exceptions reaching the user
+    - path: "src/sounddiff/{loudness,spectral,temporal,detection}.py"
+      instructions: |
+        Core DSP modules. Review with extra care for:
+        - Mathematical correctness (dB conversions, RMS calculations, correlation)
+        - Handling of edge cases (silence, single-sample files, DC offset)
+        - Numerical stability (division by zero, log of zero)
+        - Consistent units (always dB, Hz, seconds — never raw sample counts in output)
+    - path: "tests/**/*.py"
+      instructions: |
+        Test suite using pytest and hypothesis. Review for:
+        - Test isolation (no shared mutable state between tests)
+        - Meaningful assertions (not just "doesn't crash")
+        - Edge case coverage (empty input, mono, extreme values)
+        - Deterministic test audio generation (fixed seeds, no randomness without rng fixture)
+
+  tools:
+    ruff:
+      enabled: true
+
+knowledge_base:
+  web_search:
+    enabled: false

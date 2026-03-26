@@ -1,0 +1,105 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sounddiff"
+version = "0.1.0"
+description = "Structured audio comparison for producers and developers. Think git diff, but for audio."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "systemBlue", email = "hello@systemblue.dev" },
+]
+keywords = ["audio", "diff", "comparison", "loudness", "spectral", "mastering", "mixing"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+dependencies = [
+    "click>=8.1,<9",
+    "numpy>=1.24,<3",
+    "scipy>=1.10,<2",
+    "soundfile>=0.12,<1",
+    "pyloudnorm>=0.1,<1",
+    "rich>=13.0,<14",
+    "jinja2>=3.1,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4,<9",
+    "pytest-cov>=4.1,<6",
+    "hypothesis>=6.82,<7",
+    "ruff>=0.9,<1",
+    "mypy>=1.14,<2",
+    "pre-commit>=3.5,<5",
+]
+
+[project.scripts]
+sounddiff = "sounddiff.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/systemblueteam/sounddiff"
+Documentation = "https://github.com/systemblueteam/sounddiff/tree/main/docs"
+Repository = "https://github.com/systemblueteam/sounddiff"
+Issues = "https://github.com/systemblueteam/sounddiff/issues"
+Changelog = "https://github.com/systemblueteam/sounddiff/blob/main/CHANGELOG.md"
+
+[tool.ruff]
+target-version = "py310"
+line-length = 99
+src = ["src"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "N",    # pep8-naming
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "TCH",  # flake8-type-checking
+    "RUF",  # ruff-specific
+]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.ruff.lint.isort]
+known-first-party = ["sounddiff"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "soundfile.*",
+    "pyloudnorm.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sounddiff"]
