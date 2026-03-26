@@ -8,6 +8,10 @@
 
 Structured audio comparison for producers and developers. Think `git diff`, but for audio.
 
+Producers version their mixes but have no way to see what actually changed between v3 and v4. Mastering engineers need to verify their processing did what they intended. Developers building audio pipelines need automated regression testing. QA teams need to catch unauthorized edits.
+
+sounddiff gives you a clear, structured report on what changed: loudness, EQ balance, timing, edits, silence, and clipping.
+
 ## What it does
 
 ```text
@@ -44,48 +48,58 @@ Issues
 pip install sounddiff
 ```
 
-Supports wav, flac, ogg, and aiff out of the box. For mp3 and aac, install [ffmpeg](https://ffmpeg.org/).
+Requires Python 3.10 or later. Supports wav, flac, ogg, and aiff out of the box. For mp3 and aac, install [ffmpeg](https://ffmpeg.org/).
 
 ## Quick start
 
-Compare two files:
+Compare two audio files:
 
 ```sh
 sounddiff old-mix.wav new-mix.wav
 ```
 
-Get JSON output for CI pipelines:
+Get JSON output for scripts and CI pipelines:
 
 ```sh
 sounddiff old.wav new.wav --format json
 ```
 
-Generate an HTML report:
+Generate a self-contained HTML report to share with your team:
 
 ```sh
 sounddiff old.wav new.wav --format html -o report.html
 ```
 
+## What it analyzes
+
+| Category | What it measures |
+|----------|-----------------|
+| **Loudness** | Integrated LUFS, true peak (dBTP), loudness range (LRA) |
+| **Spectral** | Energy per frequency band (low, mid, high) with dB deltas |
+| **Temporal** | Segment-level similarity via cross-correlation |
+| **Detection** | Clipping events, silence regions |
+| **Metadata** | Duration, sample rate, channels, bit depth |
+
 ## Output formats
 
 - **Terminal** (default): colored, human-readable diff using [rich](https://github.com/Textualize/rich)
-- **JSON**: machine-readable, pipe it wherever you need
-- **HTML**: self-contained report you can share or archive
+- **JSON**: machine-readable, pipe it to [jq](https://jqlang.github.io/jq/) or parse it in your CI pipeline
+- **HTML**: self-contained report you can share, archive, or open in any browser
 
 ## Documentation
 
-See the [docs/](docs/) directory for detailed guides:
-
-- [Installation](docs/install.md)
-- [Usage](docs/usage.md)
-- [API Reference](docs/api.md)
-- [Architecture](docs/architecture.md)
+- [Installation](docs/install.md) - system dependencies, shell completions, ffmpeg setup
+- [Usage](docs/usage.md) - all CLI options with examples
+- [API Reference](docs/api.md) - use sounddiff as a Python library
+- [Architecture](docs/architecture.md) - how the codebase is organized
 
 ## Contributing
 
-We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
+We welcome contributions from anyone. Whether it's fixing a typo, improving error messages, or adding a new analysis module, we'd love your help.
 
-Check the [issue board](https://github.com/systemblueteam/sounddiff/issues) for open work. Issues labeled `good first issue` are a solid starting point.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and workflow.
+
+Check the [issue board](https://github.com/systemblueteam/sounddiff/issues) for open work. Issues labeled [`good first issue`](https://github.com/systemblueteam/sounddiff/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are a great place to start if you're new to the project.
 
 ## Security
 
@@ -93,4 +107,4 @@ Report vulnerabilities to <dev@systemblue.io>. See [SECURITY.md](.github/SECURIT
 
 ## License
 
-MIT
+[MIT](LICENSE) - use it however you want.
