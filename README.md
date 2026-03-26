@@ -8,8 +8,6 @@
 
 sounddiff is a CLI tool for audio producers and developers to compare two audio files and see exactly what changed. It reports differences in loudness, spectral balance, timing, and flags issues like clipping and silence. Output comes as colored terminal text, structured JSON, or a self-contained HTML report.
 
-We built it because nothing like this exists. The only prior art ([audiodiff](https://github.com/clee704/audiodiff)) hasn't been updated since 2014 and only compares metadata. sounddiff does real audio analysis.
-
 ## Example
 
 ```text
