@@ -101,7 +101,10 @@ class SpectralBand:
 
     @property
     def delta_db(self) -> float:
-        return self.energy_db_b - self.energy_db_a
+        noise_floor = -100.0
+        a = max(self.energy_db_a, noise_floor)
+        b = max(self.energy_db_b, noise_floor)
+        return b - a
 
 
 @dataclass(frozen=True)

@@ -71,7 +71,7 @@ def main(
         sys.exit(1)
 
     fmt = OutputFormat(output_format)
-    output = render(result, fmt, output_path)
+    output = render(result, fmt, output_path, no_color=no_color)
 
     if output_path and fmt == OutputFormat.HTML:
         click.echo(f"Report written to {output_path}")
