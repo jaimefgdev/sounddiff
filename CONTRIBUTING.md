@@ -62,4 +62,4 @@ refactor: extract segment detection into its own module
 
 ## Questions?
 
-Open a discussion or ask in the issue. We don't bite.
+Open an issue. We don't bite.
