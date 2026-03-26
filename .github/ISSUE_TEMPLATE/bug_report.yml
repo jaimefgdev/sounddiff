@@ -1,0 +1,62 @@
+name: Bug Report
+description: Report a bug in sounddiff
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: When I run sounddiff on two WAV files...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: What should have happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Minimal steps to reproduce the issue.
+      placeholder: |
+        1. Run `sounddiff a.wav b.wav`
+        2. See error...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: sounddiff version
+      description: Output of `sounddiff --version`
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python version
+      description: Output of `python --version`
+      placeholder: "3.12.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: audio
+    attributes:
+      label: Audio file details
+      description: Format, sample rate, channels, duration of the files involved (if relevant).

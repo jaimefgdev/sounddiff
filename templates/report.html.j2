@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>sounddiff report</title>
+<style>
+:root {
+  --bg: #1a1a2e;
+  --surface: #16213e;
+  --border: #333;
+  --text: #e0e0e0;
+  --heading: #fff;
+  --accent: #8be9fd;
+  --positive: #ff5555;
+  --negative: #50fa7b;
+  --warning: #f1fa8c;
+  --muted: #888;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'SF Mono', 'JetBrains Mono', 'Fira Code', monospace;
+  max-width: 860px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.6;
+}
+h1 { color: var(--heading); font-size: 1.3rem; margin-bottom: 0.25rem; }
+.subtitle { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+h2 {
+  color: var(--accent);
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 0.5rem 0;
+}
+td, th {
+  padding: 0.35rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th { color: var(--muted); font-weight: normal; font-size: 0.8rem; text-transform: uppercase; }
+.num { text-align: right; font-variant-numeric: tabular-nums; }
+.pos { color: var(--positive); }
+.neg { color: var(--negative); }
+.warn { color: var(--warning); }
+.similar { color: var(--negative); }
+.added { color: var(--accent); }
+.removed { color: var(--positive); }
+.changed { color: var(--warning); }
+.issue { background: rgba(255,85,85,0.1); padding: 0.5rem 0.75rem; border-radius: 4px; margin: 0.25rem 0; }
+.no-issues { color: var(--negative); }
+footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.75rem; }
+</style>
+</head>
+<body>
+
+{% set meta = result.metadata %}
+{% set file_a = meta.file_a.path.split('/')[-1] %}
+{% set file_b = meta.file_b.path.split('/')[-1] %}
+
+<h1>sounddiff</h1>
+<div class="subtitle">{{ file_a }} vs {{ file_b }}</div>
+
+{% for warning in result.warnings %}
+<div class="issue warn">Warning: {{ warning }}</div>
+{% endfor %}
+
+<h2>Metadata</h2>
+<table>
+<tr><th></th><th>{{ file_a }}</th><th>{{ file_b }}</th><th>Delta</th></tr>
+<tr>
+  <td>Duration</td>
+  <td class="num">{{ format_duration(meta.file_a.duration) }}</td>
+  <td class="num">{{ format_duration(meta.file_b.duration) }}</td>
+  <td>{% if meta.same_duration %}no change{% else %}{{ '%+.3f' % meta.duration_delta }}s{% endif %}</td>
+</tr>
+<tr>
+  <td>Sample Rate</td>
+  <td class="num">{{ meta.file_a.sample_rate }} Hz</td>
+  <td class="num">{{ meta.file_b.sample_rate }} Hz</td>
+  <td>{% if meta.same_sample_rate %}no change{% else %}<span class="warn">mismatch</span>{% endif %}</td>
+</tr>
+<tr>
+  <td>Channels</td>
+  <td class="num">{{ meta.file_a.channels }}</td>
+  <td class="num">{{ meta.file_b.channels }}</td>
+  <td>{% if meta.same_channels %}no change{% else %}<span class="warn">mismatch</span>{% endif %}</td>
+</tr>
+</table>
+
+<h2>Loudness</h2>
+{% set loud = result.loudness %}
+<table>
+<tr><th></th><th class="num">{{ file_a }}</th><th class="num">{{ file_b }}</th><th>Delta</th></tr>
+<tr>
+  <td>LUFS</td>
+  <td class="num">{{ '%.1f' % loud.file_a.lufs }}</td>
+  <td class="num">{{ '%.1f' % loud.file_b.lufs }}</td>
+  <td class="num {{ 'pos' if loud.lufs_delta > 0 else 'neg' if loud.lufs_delta < 0 else '' }}">{{ '%+.1f' % loud.lufs_delta }} dB</td>
+</tr>
+<tr>
+  <td>Peak dBTP</td>
+  <td class="num">{{ '%.1f' % loud.file_a.true_peak_dbtp }}</td>
+  <td class="num">{{ '%.1f' % loud.file_b.true_peak_dbtp }}</td>
+  <td class="num {{ 'pos' if loud.peak_delta > 0 else 'neg' if loud.peak_delta < 0 else '' }}">{{ '%+.1f' % loud.peak_delta }} dB</td>
+</tr>
+<tr>
+  <td>LRA</td>
+  <td class="num">{{ '%.1f' % loud.file_a.loudness_range }}</td>
+  <td class="num">{{ '%.1f' % loud.file_b.loudness_range }}</td>
+  <td class="num">{{ '%+.1f' % loud.lra_delta }} LU</td>
+</tr>
+</table>
+
+<h2>Spectral</h2>
+<table>
+<tr><th>Band</th><th>Range</th><th>Delta</th></tr>
+{% for band in result.spectral.bands %}
+<tr>
+  <td>{{ band.name }}</td>
+  <td class="num">
+    {% if band.low_hz >= 1000 %}{{ '%.0f' % (band.low_hz / 1000) }}k{% else %}{{ '%.0f' % band.low_hz }}{% endif %}-{% if band.high_hz >= 1000 %}{{ '%.0f' % (band.high_hz / 1000) }}k{% else %}{{ '%.0f' % band.high_hz }}{% endif %} Hz
+  </td>
+  <td class="num {{ 'pos' if band.delta_db > 1 else 'neg' if band.delta_db < -1 else '' }}">{{ '%+.1f' % band.delta_db }} dB</td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>Segments</h2>
+<table>
+<tr><th>Time</th><th>Status</th><th>Detail</th></tr>
+{% for seg in result.temporal.segments %}
+<tr>
+  <td class="num">{{ format_duration(seg.start_time) }}-{{ format_duration(seg.end_time) }}</td>
+  <td class="{{ seg.kind.value }}">{{ seg.kind.value | upper }}</td>
+  <td>
+    {% if seg.correlation is not none %}correlation: {{ '%.3f' % seg.correlation }}{% endif %}
+    {% if seg.time_shift is not none %}, shifted {{ '%+.1f' % seg.time_shift }}s{% endif %}
+  </td>
+</tr>
+{% endfor %}
+</table>
+
+<h2>Issues</h2>
+{% if result.detection.clips %}
+  {% for clip in result.detection.clips %}
+  <div class="issue">Clipping in {{ clip.file_label }} at {{ format_duration(clip.timestamp) }} ({{ clip.sample_count }} samples)</div>
+  {% endfor %}
+{% else %}
+  <div class="no-issues">No issues detected.</div>
+{% endif %}
+
+<footer>Generated by sounddiff {{ result.metadata.file_a.path }}</footer>
+
+</body>
+</html>
