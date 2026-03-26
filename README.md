@@ -87,6 +87,10 @@ We welcome contributions. See [CONTRIBUTING.md](CONTRIBUTING.md) to get started.
 
 Check the [issue board](https://github.com/systemblueteam/sounddiff/issues) for open work. Issues labeled `good first issue` are a solid starting point.
 
+## Security
+
+Report vulnerabilities to <dev@systemblue.io>. See [SECURITY.md](.github/SECURITY.md).
+
 ## License
 
 MIT

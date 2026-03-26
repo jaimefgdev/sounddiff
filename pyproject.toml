@@ -10,7 +10,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 authors = [
-    { name = "systemBlue", email = "hello@systemblue.dev" },
+    { name = "systemBlue", email = "dev@systemblue.io" },
 ]
 keywords = ["audio", "diff", "comparison", "loudness", "spectral", "mastering", "mixing"]
 classifiers = [
