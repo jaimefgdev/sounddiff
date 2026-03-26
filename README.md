@@ -6,11 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![CodeRabbit Reviews](https://img.shields.io/coderabbit/prs/github/systemblueteam/sounddiff?utm_source=oss&utm_medium=github&utm_campaign=systemblueteam%2Fsounddiff&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 
-Structured audio comparison for producers and developers. Think `git diff`, but for audio.
-
-Producers version their mixes but have no way to see what actually changed between v3 and v4. Mastering engineers need to verify their processing did what they intended. Developers building audio pipelines need automated regression testing. QA teams need to catch unauthorized edits.
-
-sounddiff gives you a clear, structured report on what changed: loudness, EQ balance, timing, edits, silence, and clipping.
+Compare two audio files. Get a clear report on what changed: loudness, EQ balance, timing, edits, silence, and clipping. Terminal output, JSON for CI, or a self-contained HTML report.
 
 ## What it does
 
