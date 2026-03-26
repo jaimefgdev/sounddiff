@@ -6,9 +6,11 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![CodeRabbit Reviews](https://img.shields.io/coderabbit/prs/github/systemblueteam/sounddiff?utm_source=oss&utm_medium=github&utm_campaign=systemblueteam%2Fsounddiff&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 
-Compare two audio files. Get a clear report on what changed: loudness, EQ balance, timing, edits, silence, and clipping. Terminal output, JSON for CI, or a self-contained HTML report.
+sounddiff is a CLI tool for audio producers and developers to compare two audio files and see exactly what changed. It reports differences in loudness, spectral balance, timing, and flags issues like clipping and silence. Output comes as colored terminal text, structured JSON, or a self-contained HTML report.
 
-## What it does
+We built it because nothing like this exists. The only prior art ([audiodiff](https://github.com/clee704/audiodiff)) hasn't been updated since 2014 and only compares metadata. sounddiff does real audio analysis.
+
+## Example
 
 ```text
 $ sounddiff mix-v3.wav mix-v4.wav
@@ -38,69 +40,87 @@ Issues
   ⚠ Clipping detected in mix-v4.wav at 2:31.4 (3 samples)
 ```
 
-## Install
+## Installation
 
 ```sh
 pip install sounddiff
 ```
 
-Requires Python 3.10 or later. Supports wav, flac, ogg, and aiff out of the box. For mp3 and aac, install [ffmpeg](https://ffmpeg.org/).
+Requires Python 3.10 or later. Supports WAV, FLAC, OGG, and AIFF natively. For MP3 and AAC support, install [ffmpeg](https://ffmpeg.org/).
 
-## Quick start
+## Usage
 
-Compare two audio files:
+Compare two files with colored terminal output:
 
 ```sh
 sounddiff old-mix.wav new-mix.wav
 ```
 
-Get JSON output for scripts and CI pipelines:
+Get structured JSON for scripts and CI pipelines:
 
 ```sh
 sounddiff old.wav new.wav --format json
 ```
 
-Generate a self-contained HTML report to share with your team:
+Generate an HTML report:
 
 ```sh
 sounddiff old.wav new.wav --format html -o report.html
 ```
 
+See [docs/usage.md](docs/usage.md) for all options.
+
 ## What it analyzes
 
-| Category | What it measures |
-|----------|-----------------|
-| **Loudness** | Integrated LUFS, true peak (dBTP), loudness range (LRA) |
-| **Spectral** | Energy per frequency band (low, mid, high) with dB deltas |
-| **Temporal** | Segment-level similarity via cross-correlation |
-| **Detection** | Clipping events, silence regions |
-| **Metadata** | Duration, sample rate, channels, bit depth |
+| Category | Measurements |
+| --- | --- |
+| **Loudness** | Integrated LUFS, true peak (dBTP), loudness range (LRA) per ITU-R BS.1770 |
+| **Spectral** | Average energy per frequency band (low, mid, high) with configurable ranges |
+| **Temporal** | Segment-level cross-correlation, added/removed/shifted section detection |
+| **Detection** | Clipping events (timestamp, channel, sample count), silence regions |
+| **Metadata** | Duration, sample rate, channels, bit depth, format |
 
 ## Output formats
 
-- **Terminal** (default): colored, human-readable diff using [rich](https://github.com/Textualize/rich)
-- **JSON**: machine-readable, pipe it to [jq](https://jqlang.github.io/jq/) or parse it in your CI pipeline
-- **HTML**: self-contained report you can share, archive, or open in any browser
+**Terminal** is the default. Colored, grouped by category, designed to be read top to bottom. Uses [rich](https://github.com/Textualize/rich) for formatting.
+
+**JSON** outputs the same data in a structured format. Pipe it to [jq](https://jqlang.github.io/jq/), parse it in Python, or use it in CI pipelines for automated regression testing.
+
+**HTML** generates a self-contained report with inline styles. No external dependencies. Open it in any browser, share it with your team, or archive it alongside your session files.
+
+## How it's built
+
+sounddiff is written in Python with a modular architecture. Each analysis type (loudness, spectral, temporal, detection) lives in its own module with no cross-dependencies. The core orchestrator loads two audio files, runs all analyzers, and passes the results to a formatter.
+
+| Dependency | Purpose |
+| --- | --- |
+| [soundfile](https://python-soundfile.readthedocs.io/) | Audio I/O via libsndfile |
+| [numpy](https://numpy.org/) | Array math, FFT, cross-correlation |
+| [scipy](https://scipy.org/) | Signal processing |
+| [pyloudnorm](https://github.com/csteinmetz1/pyloudnorm) | ITU-R BS.1770 loudness measurement |
+| [click](https://click.palletsprojects.com/) | CLI framework |
+| [rich](https://github.com/Textualize/rich) | Terminal formatting |
+| [jinja2](https://jinja.palletsprojects.com/) | HTML report templates |
+
+See [docs/architecture.md](docs/architecture.md) for the full module breakdown and data flow.
 
 ## Documentation
 
 - [Installation](docs/install.md) - system dependencies, shell completions, ffmpeg setup
-- [Usage](docs/usage.md) - all CLI options with examples
-- [API Reference](docs/api.md) - use sounddiff as a Python library
-- [Architecture](docs/architecture.md) - how the codebase is organized
+- [Usage](docs/usage.md) - CLI options and examples
+- [API Reference](docs/api.md) - using sounddiff as a Python library
+- [Architecture](docs/architecture.md) - module layout and design decisions
 
 ## Contributing
 
-We welcome contributions from anyone. Whether it's fixing a typo, improving error messages, or adding a new analysis module, we'd love your help.
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and our development workflow.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions and workflow.
-
-Check the [issue board](https://github.com/systemblueteam/sounddiff/issues) for open work. Issues labeled [`good first issue`](https://github.com/systemblueteam/sounddiff/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are a great place to start if you're new to the project.
+The [issue board](https://github.com/systemblueteam/sounddiff/issues) has open work organized by milestone. Issues labeled [`good first issue`](https://github.com/systemblueteam/sounddiff/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are scoped for newcomers and have enough context to get started without deep DSP knowledge.
 
 ## Security
 
-Report vulnerabilities to <dev@systemblue.io>. See [SECURITY.md](.github/SECURITY.md).
+Report vulnerabilities to <dev@systemblue.io>. See [SECURITY.md](.github/SECURITY.md) for our disclosure policy.
 
 ## License
 
-[MIT](LICENSE) - use it however you want.
+[MIT](LICENSE)
