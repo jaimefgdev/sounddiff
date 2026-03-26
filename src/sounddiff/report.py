@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 from dataclasses import asdict
 from pathlib import Path
@@ -14,13 +15,19 @@ from sounddiff.formats import format_channels, format_duration
 from sounddiff.types import DiffResult, OutputFormat, SegmentKind
 
 
-def render(result: DiffResult, fmt: OutputFormat, output_path: str | None = None) -> str:
+def render(
+    result: DiffResult,
+    fmt: OutputFormat,
+    output_path: str | None = None,
+    no_color: bool = False,
+) -> str:
     """Render a DiffResult in the specified format.
 
     Args:
         result: The comparison result to render.
         fmt: Output format (terminal, json, html).
         output_path: Optional path to write the output file (for HTML).
+        no_color: Disable colored terminal output.
 
     Returns:
         The rendered output as a string.
@@ -33,12 +40,12 @@ def render(result: DiffResult, fmt: OutputFormat, output_path: str | None = None
             Path(output_path).write_text(html)
         return html
     else:
-        return render_terminal(result)
+        return render_terminal(result, no_color=no_color)
 
 
-def render_terminal(result: DiffResult) -> str:
+def render_terminal(result: DiffResult, no_color: bool = False) -> str:
     """Render a colored terminal report using rich."""
-    console = Console(record=True, width=90)
+    console = Console(record=True, width=90, file=io.StringIO(), no_color=no_color)
     meta = result.metadata
 
     file_a = Path(meta.file_a.path).name
