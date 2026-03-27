@@ -1,34 +1,34 @@
 """Audio file loading and format detection."""
- 
+
 from __future__ import annotations
- 
+
 import atexit
 import os
 import shutil
 import subprocess
 import tempfile
 from pathlib import Path
- 
+
 import numpy as np  # noqa: TC002 (used at runtime in return type)
 import soundfile as sf
- 
+
 from sounddiff.types import AudioMetadata
- 
+
 # Formats supported natively via libsndfile
 NATIVE_FORMATS = {".wav", ".flac", ".ogg", ".aiff", ".aif"}
- 
+
 # Formats that require ffmpeg
 FFMPEG_FORMATS = {".mp3", ".aac", ".m4a", ".wma", ".opus"}
- 
- 
+
+
 def _remove_if_exists(path: str) -> None:
     """Remove a file if it exists, silently ignoring missing files."""
     try:
         os.remove(path)
     except FileNotFoundError:
         pass
- 
- 
+
+
 def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     """Load an audio file and return the signal and metadata.
  
@@ -46,26 +46,26 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     """
     original_filepath = Path(path)
     read_filepath = original_filepath
- 
+
     if not original_filepath.exists():
         raise FileNotFoundError(f"File not found: {original_filepath}")
- 
+
     suffix = original_filepath.suffix.lower()
- 
+
     if suffix in FFMPEG_FORMATS:
         if not shutil.which("ffmpeg"):
             raise ValueError(
                 f"Format '{suffix}' requires ffmpeg, but it is not installed on your system. "
                 "Please install ffmpeg to analyze compressed audio files."
             )
- 
+
         # Create a temporary WAV file for ffmpeg to write into
         fd, temp_wav_path = tempfile.mkstemp(suffix=".wav", prefix="sounddiff_")
         os.close(fd)
- 
+
         # Schedule cleanup on exit so we never leave temp files behind
         atexit.register(_remove_if_exists, temp_wav_path)
- 
+
         try:
             # Transcode silently to WAV, dropping video streams (like album art) with -vn
             subprocess.run(
@@ -88,19 +88,19 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
             raise RuntimeError(
                 f"FFmpeg failed to transcode '{path}': {e.stderr.decode('utf-8', errors='replace').strip()}"
             ) from e
- 
+
     if suffix not in NATIVE_FORMATS and suffix not in FFMPEG_FORMATS:
         raise ValueError(
             f"Unsupported audio format: '{suffix}'. "
             f"Supported: {', '.join(sorted(NATIVE_FORMATS | FFMPEG_FORMATS))}"
         )
- 
+
     try:
         info = sf.info(str(read_filepath))
         data, sample_rate = sf.read(str(read_filepath), dtype="float64", always_2d=True)
     except RuntimeError as e:
         raise RuntimeError(f"Cannot read audio file: {original_filepath} ({e})") from e
- 
+
     metadata = AudioMetadata(
         path=str(original_filepath),
         duration=len(data) / sample_rate,
@@ -110,10 +110,10 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         format_name=info.format,
         frames=len(data),
     )
- 
+
     return data, metadata
- 
- 
+
+
 def _subtype_to_bits(subtype: str) -> int | None:
     """Convert soundfile subtype string to bit depth."""
     mapping: dict[str, int] = {
@@ -126,15 +126,15 @@ def _subtype_to_bits(subtype: str) -> int | None:
         "DOUBLE": 64,
     }
     return mapping.get(subtype)
- 
- 
+
+
 def format_duration(seconds: float) -> str:
     """Format a duration in seconds as M:SS.mmm."""
     minutes = int(seconds // 60)
     secs = seconds % 60
     return f"{minutes}:{secs:06.3f}"
- 
- 
+
+
 def format_channels(n: int) -> str:
     """Format channel count as a human-readable string."""
     if n == 1:
@@ -142,4 +142,3 @@ def format_channels(n: int) -> str:
     if n == 2:
         return "stereo"
     return f"{n}ch"
- 
