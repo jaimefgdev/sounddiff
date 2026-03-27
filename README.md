@@ -41,10 +41,12 @@ Issues
 ## Installation
 
 ```sh
-pip install sounddiff
+pipx install sounddiff
 ```
 
-Requires Python 3.10 or later. Supports WAV, FLAC, OGG, and AIFF natively. For MP3 and AAC support, install [ffmpeg](https://ffmpeg.org/).
+Or with pip: `pip install sounddiff`
+
+Requires Python 3.10 or later. Supports WAV, FLAC, OGG, and AIFF natively. For MP3 and AAC support, install [ffmpeg](https://ffmpeg.org/). See [docs/install.md](docs/install.md) for detailed setup.
 
 ## Usage
 
