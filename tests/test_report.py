@@ -21,6 +21,42 @@ from sounddiff.types import (
 )
 
 
+def _make_clean_result() -> DiffResult:
+    """Create a DiffResult with no meaningful differences."""
+    return DiffResult(
+        metadata=MetadataComparison(
+            file_a=AudioMetadata(
+                path="/tmp/a.wav",
+                duration=10.0,
+                sample_rate=48000,
+                channels=2,
+                bit_depth=16,
+                format_name="WAV",
+                frames=480000,
+            ),
+            file_b=AudioMetadata(
+                path="/tmp/b.wav",
+                duration=10.0,
+                sample_rate=48000,
+                channels=2,
+                bit_depth=16,
+                format_name="WAV",
+                frames=480000,
+            ),
+        ),
+        loudness=LoudnessComparison(
+            file_a=LoudnessResult(lufs=-14.0, true_peak_dbtp=-1.0, loudness_range=4.0),
+            file_b=LoudnessResult(lufs=-14.1, true_peak_dbtp=-1.0, loudness_range=4.0),
+        ),
+        spectral=SpectralComparison(bands=[SpectralBand("Low", 20, 250, -30.0, -30.0)]),
+        temporal=TemporalComparison(
+            segments=[Segment(SegmentKind.SIMILAR, 0.0, 10.0, correlation=0.99)],
+            overall_correlation=0.99,
+        ),
+        detection=DetectionResult(clips=[], silence_regions_a=[], silence_regions_b=[]),
+    )
+
+
 def _make_result() -> DiffResult:
     """Create a sample DiffResult for testing."""
     return DiffResult(
@@ -82,6 +118,27 @@ class TestRenderTerminal:
     def test_contains_clipping_warning(self) -> None:
         output = render_terminal(_make_result())
         assert "Clipping" in output
+
+    def test_verdict_nearly_identical(self) -> None:
+        output = render_terminal(_make_clean_result())
+        assert "nearly identical" in output
+
+    def test_verdict_major_differences(self) -> None:
+        output = render_terminal(_make_result())
+        assert "Major differences" in output
+
+    def test_dim_unchanged_metadata(self) -> None:
+        # When files have same metadata, rows use dim markup in the source
+        # export_text() strips markup, so we verify the values appear without error
+        output = render_terminal(_make_clean_result())
+        assert "48000 Hz" in output
+
+    def test_sections_use_panels(self) -> None:
+        output = render_terminal(_make_result())
+        # Panels render with border characters; Metadata/Loudness/Spectral headers appear
+        assert "Metadata" in output
+        assert "Loudness" in output
+        assert "Spectral" in output
 
 
 class TestRenderJSON:
