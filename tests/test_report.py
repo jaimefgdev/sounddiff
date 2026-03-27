@@ -140,6 +140,18 @@ class TestRenderTerminal:
         assert "Loudness" in output
         assert "Spectral" in output
 
+    def test_verbose_shows_per_file_panels(self) -> None:
+        output = render_terminal(_make_result(), verbose=True)
+        assert "Filename" in output
+        assert "Format" in output
+        assert "File Size" in output
+        assert "Bit Depth" in output
+
+    def test_verbose_not_shown_by_default(self) -> None:
+        output = render_terminal(_make_result())
+        assert "Filename" not in output
+        assert "File Size" not in output
+
 
 class TestRenderJSON:
     def test_is_valid_json(self) -> None:

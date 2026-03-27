@@ -8,13 +8,14 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from rich.columns import Columns
 from rich.console import Console
 from rich.panel import Panel
 from rich.rule import Rule
 from rich.table import Table
 
-from sounddiff.formats import format_channels, format_duration
-from sounddiff.types import DiffResult, OutputFormat, SegmentKind
+from sounddiff.formats import format_channels, format_duration, format_file_size
+from sounddiff.types import AudioMetadata, DiffResult, OutputFormat, SegmentKind
 
 
 def render(
@@ -67,6 +68,8 @@ def render_terminal(result: DiffResult, no_color: bool = False, verbose: bool = 
         console.print()
 
     # Sections
+    if verbose:
+        _print_verbose_metadata_panel(console, meta)
     _print_metadata_section(console, meta)
     _print_loudness_section(console, result)
     _print_spectral_section(console, result)
@@ -77,6 +80,35 @@ def render_terminal(result: DiffResult, no_color: bool = False, verbose: bool = 
     _print_verdict(console, result)
 
     return console.export_text()
+
+
+def _print_verbose_metadata_panel(console: Console, meta: Any) -> None:
+    """Print a rich per-file metadata panel (verbose mode)."""
+
+    def _file_panel(audio: AudioMetadata) -> Panel:
+        name = Path(audio.path).name
+        grid = Table.grid(padding=(0, 1))
+        grid.add_column(style="dim", min_width=12)
+        grid.add_column()
+        grid.add_row("Filename", name)
+        grid.add_row("Format", audio.format_name or "unknown")
+        grid.add_row("Duration", format_duration(audio.duration))
+        grid.add_row("Sample Rate", f"{audio.sample_rate} Hz")
+        grid.add_row("Bit Depth", f"{audio.bit_depth}-bit" if audio.bit_depth else "unknown")
+        grid.add_row("Channels", format_channels(audio.channels))
+        grid.add_row("File Size", format_file_size(audio.file_size))
+        return Panel(grid, title=f"[bold]{name}[/bold]", border_style="dim")
+
+    panel_a = _file_panel(meta.file_a)
+    panel_b = _file_panel(meta.file_b)
+
+    if console.width >= 80:
+        console.print(Columns([panel_a, panel_b], equal=True, expand=True))
+    else:
+        console.print(panel_a)
+        console.print(panel_b)
+
+    console.print()
 
 
 def _dim(s: str, should_dim: bool) -> str:

@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from sounddiff.formats import format_channels, format_duration, load_audio
+from sounddiff.formats import format_channels, format_duration, format_file_size, load_audio
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
@@ -39,7 +39,10 @@ class TestLoadAudio:
         with pytest.raises(ValueError, match="Unsupported"):
             load_audio(fake)
 
-    def test_mp3_without_ffmpeg(self, tmp_path: Path) -> None:
+    def test_mp3_without_ffmpeg(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        import shutil
+
+        monkeypatch.setattr(shutil, "which", lambda _: None)
         fake = tmp_path / "test.mp3"
         fake.write_text("not really mp3")
         with pytest.raises(ValueError, match="ffmpeg"):
@@ -52,6 +55,25 @@ class TestLoadAudio:
     def test_frames_matches_data_length(self) -> None:
         data, meta = load_audio(FIXTURES_DIR / "sine_a.wav")
         assert meta.frames == len(data)
+
+    def test_file_size_is_populated(self) -> None:
+        _, meta = load_audio(FIXTURES_DIR / "sine_a.wav")
+        assert meta.file_size is not None
+        assert meta.file_size > 0
+
+
+class TestFormatFileSize:
+    def test_bytes(self) -> None:
+        assert format_file_size(512) == "512 B"
+
+    def test_kilobytes(self) -> None:
+        assert format_file_size(2048) == "2.0 KB"
+
+    def test_megabytes(self) -> None:
+        assert format_file_size(5 * 1024 * 1024) == "5.0 MB"
+
+    def test_none(self) -> None:
+        assert format_file_size(None) == "unknown"
 
 
 class TestFormatDuration:
