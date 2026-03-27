@@ -18,12 +18,15 @@ ruff check . && ruff format --check . && mypy src
 
 ```
 src/sounddiff/
+  __init__.py    # Package init, version
+  __main__.py    # python -m sounddiff entry point
   types.py       # Dataclasses for all results
   formats.py     # Audio I/O via soundfile
   loudness.py    # LUFS, true peak, LRA (pyloudnorm)
   spectral.py    # Band energy comparison (numpy FFT)
   temporal.py    # Cross-correlation, segment detection
   detection.py   # Clipping, silence detection
+  threshold.py   # CI threshold parsing and checking
   core.py        # Pipeline orchestration
   cli.py         # Click CLI entry point
   report.py      # Output formatters (terminal/JSON/HTML)
@@ -58,6 +61,11 @@ src/sounddiff/
 | click | CLI framework |
 | rich | Terminal formatting |
 | jinja2 | HTML report templates |
+
+## Project
+
+- [Issues](https://github.com/systemblueteam/sounddiff/issues) | [Wiki](https://github.com/systemblueteam/sounddiff/wiki)
+- Milestones: v0.2.0 (polish), v0.3.0 (integrations)
 
 ## Gotchas
 
