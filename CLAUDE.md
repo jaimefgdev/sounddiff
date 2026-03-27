@@ -26,7 +26,6 @@ src/sounddiff/
   spectral.py    # Band energy comparison (numpy FFT)
   temporal.py    # Cross-correlation, segment detection
   detection.py   # Clipping, silence detection
-  threshold.py   # CI threshold parsing and checking
   core.py        # Pipeline orchestration
   cli.py         # Click CLI entry point
   report.py      # Output formatters (terminal/JSON/HTML)
