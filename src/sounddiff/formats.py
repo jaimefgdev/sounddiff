@@ -68,7 +68,7 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
 
     if original_filepath != read_filepath:
         ext = original_filepath.suffix.lower()
-        display_format = FORMAT_DISPLAY_NAMES.get(ext, ext.lstrip('.').upper())
+        display_format = FORMAT_DISPLAY_NAMES.get(ext, ext.lstrip(".").upper())
     else:
         display_format = info.format
 
