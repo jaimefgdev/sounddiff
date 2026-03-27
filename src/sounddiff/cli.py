@@ -72,8 +72,8 @@ def main(
         # Skip the probe for ffmpeg-backed formats; sf.info() can't read them
         # and diff() will handle any format errors with a clear message.
         if (
-            pathlib.Path(file_a).suffix.lower() not in FFMPEG_FORMATS and
-            pathlib.Path(file_b).suffix.lower() not in FFMPEG_FORMATS
+            pathlib.Path(file_a).suffix.lower() not in FFMPEG_FORMATS
+            and pathlib.Path(file_b).suffix.lower() not in FFMPEG_FORMATS
         ):
             info_a = sf.info(file_a)
             info_b = sf.info(file_b)
