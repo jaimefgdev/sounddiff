@@ -53,6 +53,34 @@ class TestLoadAudio:
         data, meta = load_audio(FIXTURES_DIR / "sine_a.wav")
         assert meta.frames == len(data)
 
+    def test_transcoded_format_name_is_correct(self, tmp_path: Path) -> None:
+        """Verifies that transcoded files show their original format name, not WAV."""
+        from unittest.mock import patch
+
+        # 1. Creamos un archivo MP3 falso para pasar la validación de path.exists()
+        fake_mp3 = tmp_path / "test.mp3"
+        fake_mp3.write_text("fake audio content")
+
+        # 2. Simulamos que ffmpeg existe y que la lectura del WAV temporal funciona
+        with patch("sounddiff.formats.shutil.which", return_value="ffmpeg"), \
+             patch("sounddiff.formats.subprocess.run"), \
+             patch("sounddiff.formats.sf.info") as mock_info, \
+             patch("sounddiff.formats.sf.read") as mock_read:
+
+            # Configuramos el mock para simular lo que devolvería el WAV temporal
+            class MockInfo:
+                format = "WAV"
+                subtype = "PCM_16"
+
+            mock_info.return_value = MockInfo()
+            mock_read.return_value = (np.zeros((100, 2), dtype=np.float64), 44100)
+
+            # 3. Llamamos a tu función
+            _, meta = load_audio(fake_mp3)
+
+            # 4. LA COMPROBACIÓN FINAL: Debe decir MP3 y no WAV
+            assert meta.format_name == "MP3"
+
 
 class TestFormatDuration:
     def test_zero(self) -> None:

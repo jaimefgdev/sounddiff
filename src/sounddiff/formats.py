@@ -22,7 +22,7 @@ NATIVE_FORMATS = {".wav", ".flac", ".ogg", ".aiff", ".aif"}
 FFMPEG_FORMATS = {".mp3", ".aac", ".m4a", ".wma", ".opus"}
 
 # Mapping for original format display names in metadata
-FORMAT_DISPLAY_NAMES = {
+FORMAT_DISPLAY_NAMES: dict[str, str] = {
     ".mp3": "MP3",
     ".aac": "AAC",
     ".m4a": "AAC",
