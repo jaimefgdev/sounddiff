@@ -105,4 +105,4 @@ class TestFormatChannels:
 
     def test_multichannel(self) -> None:
         assert format_channels(6) == "6ch"
-        
+ 
