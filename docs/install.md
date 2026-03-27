@@ -1,22 +1,40 @@
 # Installation
 
-## From PyPI
+## Recommended: pipx
+
+[pipx](https://pipx.pypa.io/) installs sounddiff in an isolated environment and makes the `sounddiff` command available globally. This is the best option for most users.
+
+```sh
+pipx install sounddiff
+```
+
+If you don't have pipx, install it first: `brew install pipx` (macOS) or `apt install pipx` (Ubuntu).
+
+## With pip
 
 ```sh
 pip install sounddiff
 ```
 
-Requires Python 3.10 or later.
+On macOS, `pip` may not be available system-wide. Use `pip3` or install inside a virtual environment:
+
+```sh
+python3 -m venv .venv && source .venv/bin/activate
+pip install sounddiff
+```
 
 ## From source
 
 ```sh
 git clone https://github.com/systemblueteam/sounddiff.git
 cd sounddiff
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
 This installs sounddiff in editable mode with all development dependencies (pytest, ruff, mypy, hypothesis, pre-commit).
+
+Requires Python 3.10 or later.
 
 ## System dependencies
 
