@@ -1,8 +1,8 @@
 # Default owners for everything
-* @claudesystemblueio
+* @systemblueteam
 
 # Core audio analysis
-src/sounddiff/loudness.py @claudesystemblueio
-src/sounddiff/spectral.py @claudesystemblueio
-src/sounddiff/temporal.py @claudesystemblueio
-src/sounddiff/detection.py @claudesystemblueio
+src/sounddiff/loudness.py @systemblueteam
+src/sounddiff/spectral.py @systemblueteam
+src/sounddiff/temporal.py @systemblueteam
+src/sounddiff/detection.py @systemblueteam
