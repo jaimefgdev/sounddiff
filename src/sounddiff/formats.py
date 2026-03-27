@@ -2,6 +2,12 @@
 
 from __future__ import annotations
 
+import atexit
+import contextlib
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 import numpy as np  # noqa: TC002 (used at runtime in return type)
@@ -25,6 +31,12 @@ FORMAT_DISPLAY_NAMES = {
 }
 
 
+def _remove_if_exists(path: str) -> None:
+    """Remove a file if it exists, silently ignoring missing files."""
+    with contextlib.suppress(FileNotFoundError):
+        os.remove(path)
+
+
 def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     """Load an audio file and return the signal and metadata.
 
@@ -40,31 +52,62 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         ValueError: If the format is unsupported or requires ffmpeg.
         RuntimeError: If the file cannot be read.
     """
-    filepath = Path(path)
+    original_filepath = Path(path)
+    read_filepath = original_filepath
 
-    if not filepath.exists():
-        raise FileNotFoundError(f"File not found: {filepath}")
+    if not original_filepath.exists():
+        raise FileNotFoundError(f"File not found: {original_filepath}")
 
-    suffix = filepath.suffix.lower()
+    suffix = original_filepath.suffix.lower()
 
     if suffix in FFMPEG_FORMATS:
-        raise ValueError(
-            f"Format '{suffix}' requires ffmpeg, which is not installed or not supported yet. "
-            f"Supported formats without ffmpeg: {', '.join(sorted(NATIVE_FORMATS))}"
-        )
+        if not shutil.which("ffmpeg"):
+            raise ValueError(
+                f"Format '{suffix}' requires ffmpeg, but it is not installed on your system. "
+                "Please install ffmpeg to analyze compressed audio files."
+            )
 
-    if suffix not in NATIVE_FORMATS:
+        # Create a temporary WAV file for ffmpeg to write into
+        fd, temp_wav_path = tempfile.mkstemp(suffix=".wav", prefix="sounddiff_")
+        os.close(fd)
+
+        # Schedule cleanup on exit so we never leave temp files behind
+        atexit.register(_remove_if_exists, temp_wav_path)
+
+        try:
+            # Transcode silently to WAV, dropping video streams (like album art) with -vn
+            subprocess.run(
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    str(original_filepath),
+                    "-vn",
+                    "-loglevel",
+                    "error",
+                    temp_wav_path,
+                ],
+                check=True,
+                capture_output=True,
+            )
+            # We will read from the temp file, but keep the original path for metadata
+            read_filepath = Path(temp_wav_path)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(
+                f"FFmpeg failed to transcode '{path}': {e.stderr.decode('utf-8', errors='replace').strip()}"
+            ) from e
+
+    if suffix not in NATIVE_FORMATS and suffix not in FFMPEG_FORMATS:
         raise ValueError(
             f"Unsupported audio format: '{suffix}'. "
             f"Supported: {', '.join(sorted(NATIVE_FORMATS | FFMPEG_FORMATS))}"
         )
 
     try:
-        info = sf.info(str(filepath))
+        info = sf.info(str(read_filepath))
+        data, sample_rate = sf.read(str(read_filepath), dtype="float64", always_2d=True)
     except RuntimeError as e:
-        raise RuntimeError(f"Cannot read audio file: {filepath} ({e})") from e
-
-    data, sample_rate = sf.read(str(filepath), dtype="float64", always_2d=True)
+        raise RuntimeError(f"Cannot read audio file: {original_filepath} ({e})") from e
 
     if original_filepath != read_filepath:
         ext = original_filepath.suffix.lower()
@@ -73,7 +116,7 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         display_format = info.format
 
     metadata = AudioMetadata(
-        path=str(filepath),
+        path=str(original_filepath),
         duration=len(data) / sample_rate,
         sample_rate=sample_rate,
         channels=data.shape[1],
