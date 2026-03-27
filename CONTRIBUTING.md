@@ -17,7 +17,7 @@ If all tests pass, your environment is ready.
 
 The [issue board](https://github.com/systemblueteam/sounddiff/issues) is organized by milestone. Issues labeled [`good first issue`](https://github.com/systemblueteam/sounddiff/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are scoped for newcomers and include enough context to get started without deep DSP knowledge.
 
-If you want to work on something, leave a comment on the issue so nobody duplicates effort. If you have an idea that isn't on the board, open an issue first so we can align on scope before you write code.
+Pick up any open issue. If you want to signal you're working on it, open a draft PR early. If you have an idea that isn't on the board, open an issue first so we can align on scope before you write code.
 
 ## Development workflow
 
@@ -31,8 +31,8 @@ If you want to work on something, leave a comment on the issue so nobody duplica
 
 - **One concern per PR.** Keep diffs focused and reviewable.
 - **Reference the issue** in your PR body: `Closes #42`
-- **CI must pass** before review. The pipeline runs ruff, mypy, and pytest across Python 3.10-3.13 on Linux and macOS.
-- **[CodeRabbit](https://coderabbit.ai) reviews every PR automatically.** Address its feedback or explain your reasoning if you disagree.
+- **CI must pass** before review. The pipeline runs ruff, mypy, and pytest on Python 3.10 and 3.13 on Linux.
+- **[CodeRabbit](https://coderabbit.ai) reviews every PR automatically.** Only project maintainers can respond to CodeRabbit comments. If CodeRabbit flags something on your PR, a maintainer will handle it during review.
 - Maintainers will review within a few days. If a week goes by without a response, ping us in the PR.
 
 ## Code standards

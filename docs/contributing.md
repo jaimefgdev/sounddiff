@@ -29,6 +29,6 @@ pytest
 - **Type checking**: mypy in strict mode, type hints on all public functions
 - **Docstrings**: Google style on public functions
 - **Testing**: pytest + hypothesis, every feature and bug fix needs a test
-- **PRs**: one concern per PR, CI must pass, [CodeRabbit](https://coderabbit.ai) reviews automatically
+- **PRs**: one concern per PR, CI must pass, [CodeRabbit](https://coderabbit.ai) reviews automatically (only maintainers can respond to CodeRabbit)
 
 Issues labeled [`good first issue`](https://github.com/systemblueteam/sounddiff/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) are scoped for newcomers.
