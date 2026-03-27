@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 
 import click
+import soundfile as sf
+from rich.progress import Progress
 
 from sounddiff import __version__
 from sounddiff.core import diff
@@ -59,7 +61,16 @@ def main(
     differences in loudness, spectral content, timing, and potential issues.
     """
     try:
-        result = diff(file_a, file_b)
+        info = sf.info(file_a)
+        duration = info.frames / info.samplerate
+
+        if duration > 30:
+            with Progress(transient=True) as progress:
+                progress.add_task("[cyan]Analyzing audio files...", total=None)
+                result = diff(file_a, file_b)
+        else:
+            result = diff(file_a, file_b)
+
     except FileNotFoundError as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
