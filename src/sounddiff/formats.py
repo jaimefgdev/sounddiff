@@ -115,6 +115,11 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     else:
         display_format = info.format
 
+    try:
+        file_size: int | None = original_filepath.stat().st_size
+    except OSError:
+        file_size = None
+
     metadata = AudioMetadata(
         path=str(original_filepath),
         duration=len(data) / sample_rate,
@@ -123,6 +128,7 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         bit_depth=_subtype_to_bits(info.subtype),
         format_name=display_format,
         frames=len(data),
+        file_size=file_size,
     )
 
     return data, metadata
@@ -140,6 +146,17 @@ def _subtype_to_bits(subtype: str) -> int | None:
         "DOUBLE": 64,
     }
     return mapping.get(subtype)
+
+
+def format_file_size(size: int | None) -> str:
+    """Format a file size in bytes as a human-readable string."""
+    if size is None:
+        return "unknown"
+    if size < 1024:
+        return f"{size} B"
+    if size < 1024 * 1024:
+        return f"{size / 1024:.1f} KB"
+    return f"{size / (1024 * 1024):.1f} MB"
 
 
 def format_duration(seconds: float) -> str:

@@ -8,11 +8,14 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from rich.columns import Columns
 from rich.console import Console
+from rich.panel import Panel
+from rich.rule import Rule
 from rich.table import Table
 
-from sounddiff.formats import format_channels, format_duration
-from sounddiff.types import DiffResult, OutputFormat, SegmentKind
+from sounddiff.formats import format_channels, format_duration, format_file_size
+from sounddiff.types import AudioMetadata, DiffResult, OutputFormat, SegmentKind
 
 
 def render(
@@ -20,6 +23,7 @@ def render(
     fmt: OutputFormat,
     output_path: str | None = None,
     no_color: bool = False,
+    verbose: bool = False,
 ) -> str:
     """Render a DiffResult in the specified format.
 
@@ -28,6 +32,7 @@ def render(
         fmt: Output format (terminal, json, html).
         output_path: Optional path to write the output file (for HTML).
         no_color: Disable colored terminal output.
+        verbose: Show additional detail.
 
     Returns:
         The rendered output as a string.
@@ -40,10 +45,10 @@ def render(
             Path(output_path).write_text(html)
         return html
     else:
-        return render_terminal(result, no_color=no_color)
+        return render_terminal(result, no_color=no_color, verbose=verbose)
 
 
-def render_terminal(result: DiffResult, no_color: bool = False) -> str:
+def render_terminal(result: DiffResult, no_color: bool = False, verbose: bool = False) -> str:
     """Render a colored terminal report using rich."""
     console = Console(record=True, width=90, file=io.StringIO(), no_color=no_color)
     meta = result.metadata
@@ -51,160 +56,261 @@ def render_terminal(result: DiffResult, no_color: bool = False) -> str:
     file_a = Path(meta.file_a.path).name
     file_b = Path(meta.file_b.path).name
 
+    # Header
     console.print()
-    console.print(f"[bold]sounddiff:[/bold] {file_a} vs {file_b}")
+    console.print(Rule(f"[bold]sounddiff[/bold]  {file_a} [dim]\u2192[/dim]  {file_b}"))
     console.print()
 
     # Warnings
     for warning in result.warnings:
-        console.print(f"[yellow]Warning:[/yellow] {warning}")
+        console.print(f"  [yellow]! {warning}[/yellow]")
     if result.warnings:
         console.print()
 
-    # Metadata
+    # Sections
+    if verbose:
+        _print_verbose_metadata_panel(console, meta)
     _print_metadata_section(console, meta)
-    console.print()
-
-    # Loudness
     _print_loudness_section(console, result)
-    console.print()
-
-    # Spectral
     _print_spectral_section(console, result)
-    console.print()
-
-    # Segments
     _print_segments_section(console, result)
-    console.print()
-
-    # Issues
     _print_issues_section(console, result)
 
+    # Verdict
+    _print_verdict(console, result)
+
     return console.export_text()
+
+
+def _print_verbose_metadata_panel(console: Console, meta: Any) -> None:
+    """Print a rich per-file metadata panel (verbose mode)."""
+
+    def _file_panel(audio: AudioMetadata) -> Panel:
+        name = Path(audio.path).name
+        grid = Table.grid(padding=(0, 1))
+        grid.add_column(style="dim", min_width=12)
+        grid.add_column()
+        grid.add_row("Filename", name)
+        grid.add_row("Format", audio.format_name or "unknown")
+        grid.add_row("Duration", format_duration(audio.duration))
+        grid.add_row("Sample Rate", f"{audio.sample_rate} Hz")
+        grid.add_row("Bit Depth", f"{audio.bit_depth}-bit" if audio.bit_depth else "unknown")
+        grid.add_row("Channels", format_channels(audio.channels))
+        grid.add_row("File Size", format_file_size(audio.file_size))
+        return Panel(grid, title=f"[bold]{name}[/bold]", border_style="dim")
+
+    panel_a = _file_panel(meta.file_a)
+    panel_b = _file_panel(meta.file_b)
+
+    if console.width >= 80:
+        console.print(Columns([panel_a, panel_b], equal=True, expand=True))
+    else:
+        console.print(panel_a)
+        console.print(panel_b)
+
+    console.print()
+
+
+def _dim(s: str, should_dim: bool) -> str:
+    """Wrap text in dim markup when unchanged."""
+    return f"[dim]{s}[/dim]" if should_dim else s
 
 
 def _print_metadata_section(console: Console, meta: Any) -> None:
     """Print the metadata comparison section."""
     dur_a = format_duration(meta.file_a.duration)
     dur_b = format_duration(meta.file_b.duration)
-    dur_note = "(no change)" if meta.same_duration else f"({meta.duration_delta:+.3f}s)"
+    dur_note = "" if meta.same_duration else f"[yellow]({meta.duration_delta:+.3f}s)[/yellow]"
 
     sr_a = f"{meta.file_a.sample_rate} Hz"
     sr_b = f"{meta.file_b.sample_rate} Hz"
-    sr_note = "(no change)" if meta.same_sample_rate else "(MISMATCH)"
+    sr_note = "" if meta.same_sample_rate else "[red]MISMATCH[/red]"
 
     ch_a = format_channels(meta.file_a.channels)
     ch_b = format_channels(meta.file_b.channels)
-    ch_note = "(no change)" if meta.same_channels else "(MISMATCH)"
+    ch_note = "" if meta.same_channels else "[red]MISMATCH[/red]"
 
-    table = Table(show_header=False, box=None, padding=(0, 2))
-    table.add_column(width=12)
-    table.add_column(width=12, justify="right")
-    table.add_column(width=3, justify="center")
-    table.add_column(width=12)
-    table.add_column(width=16)
+    table = Table.grid(padding=(0, 2))
+    table.add_column(min_width=12)
+    table.add_column(min_width=12, justify="right")
+    table.add_column(width=2, justify="center")
+    table.add_column(min_width=12)
+    table.add_column(min_width=16)
 
-    table.add_row("Duration", dur_a, "->", dur_b, dur_note)
-    table.add_row("Sample Rate", sr_a, "->", sr_b, sr_note)
-    table.add_row("Channels", ch_a, "->", ch_b, ch_note)
+    table.add_row(
+        _dim("Duration", meta.same_duration),
+        _dim(dur_a, meta.same_duration),
+        _dim("\u2192", meta.same_duration),
+        _dim(dur_b, meta.same_duration),
+        dur_note,
+    )
+    table.add_row(
+        _dim("Sample Rate", meta.same_sample_rate),
+        _dim(sr_a, meta.same_sample_rate),
+        _dim("\u2192", meta.same_sample_rate),
+        _dim(sr_b, meta.same_sample_rate),
+        sr_note,
+    )
+    table.add_row(
+        _dim("Channels", meta.same_channels),
+        _dim(ch_a, meta.same_channels),
+        _dim("\u2192", meta.same_channels),
+        _dim(ch_b, meta.same_channels),
+        ch_note,
+    )
 
-    console.print(table)
+    console.print(Panel(table, title="[bold]Metadata[/bold]", border_style="dim"))
+    console.print()
 
 
 def _print_loudness_section(console: Console, result: DiffResult) -> None:
     """Print the loudness comparison section."""
     loud = result.loudness
-    console.print("[bold]Loudness (integrated)[/bold]")
 
-    table = Table(show_header=False, box=None, padding=(0, 2))
-    table.add_column(width=14)
-    table.add_column(width=10, justify="right")
-    table.add_column(width=3, justify="center")
-    table.add_column(width=10, justify="right")
-    table.add_column(width=14)
+    table = Table.grid(padding=(0, 2))
+    table.add_column(min_width=12)
+    table.add_column(min_width=8, justify="right")
+    table.add_column(width=2, justify="center")
+    table.add_column(min_width=8, justify="right")
+    table.add_column(min_width=14)
 
     delta_color = "red" if loud.lufs_delta > 0 else "green" if loud.lufs_delta < 0 else "white"
     table.add_row(
-        "  LUFS",
+        "LUFS",
         f"{loud.file_a.lufs:.1f}",
-        "->",
+        "\u2192",
         f"{loud.file_b.lufs:.1f}",
         f"[{delta_color}]({loud.lufs_delta:+.1f} dB)[/{delta_color}]",
     )
 
     peak_color = "red" if loud.peak_delta > 0 else "green" if loud.peak_delta < 0 else "white"
     table.add_row(
-        "  Peak dBTP",
+        "Peak dBTP",
         f"{loud.file_a.true_peak_dbtp:.1f}",
-        "->",
+        "\u2192",
         f"{loud.file_b.true_peak_dbtp:.1f}",
         f"[{peak_color}]({loud.peak_delta:+.1f} dB)[/{peak_color}]",
     )
 
-    lra_color = "yellow" if abs(loud.lra_delta) > 2 else "white"
+    lra_color = "yellow" if abs(loud.lra_delta) > 2 else "dim"
     table.add_row(
-        "  LRA",
+        "LRA",
         f"{loud.file_a.loudness_range:.1f}",
-        "->",
+        "\u2192",
         f"{loud.file_b.loudness_range:.1f}",
         f"[{lra_color}]({loud.lra_delta:+.1f} LU)[/{lra_color}]",
     )
 
-    console.print(table)
+    console.print(Panel(table, title="[bold]Loudness[/bold]", border_style="dim"))
+    console.print()
 
 
 def _print_spectral_section(console: Console, result: DiffResult) -> None:
     """Print the spectral comparison section."""
-    console.print("[bold]Spectral[/bold]")
+    table = Table.grid(padding=(0, 2))
+    table.add_column(min_width=8)
+    table.add_column(min_width=18)
+    table.add_column(min_width=16)
 
     for band in result.spectral.bands:
         hz_label = _format_hz_range(band.low_hz, band.high_hz)
         delta = band.delta_db
-        color = "red" if delta > 1 else "green" if delta < -1 else "white"
-        console.print(f"  {band.name:<6} ({hz_label})  [{color}]{delta:+.1f} dB avg[/{color}]")
+        color = "red" if delta > 1 else "green" if delta < -1 else "dim"
+        table.add_row(
+            band.name,
+            f"[dim]{hz_label}[/dim]",
+            f"[{color}]{delta:+.1f} dB avg[/{color}]",
+        )
+
+    console.print(Panel(table, title="[bold]Spectral[/bold]", border_style="dim"))
+    console.print()
 
 
 def _print_segments_section(console: Console, result: DiffResult) -> None:
     """Print the segment comparison section."""
-    console.print("[bold]Segments[/bold]")
+    table = Table.grid(padding=(0, 2))
+    table.add_column(min_width=16)
+    table.add_column(min_width=12)
+    table.add_column()
 
     for seg in result.temporal.segments:
         start = format_duration(seg.start_time)
         end = format_duration(seg.end_time)
-        time_range = f"  {start}-{end}"
+        time_range = f"{start}\u2013{end}"
 
         if seg.kind == SegmentKind.SIMILAR:
-            corr_str = f"(correlation: {seg.correlation:.2f})" if seg.correlation else ""
+            corr_str = f"correlation {seg.correlation:.2f}" if seg.correlation else ""
             shift_str = f", shifted {seg.time_shift:+.1f}s" if seg.time_shift else ""
-            console.print(f"{time_range}  [green]similar[/green] {corr_str}{shift_str}")
+            kind_str = "[dim]similar[/dim]"
+            details = f"[dim]{corr_str}{shift_str}[/dim]"
         elif seg.kind == SegmentKind.ADDED:
-            dur = seg.duration
-            console.print(f"{time_range}  [cyan]ADDED[/cyan] (new content, {dur:.1f}s)")
+            kind_str = "[cyan]added[/cyan]"
+            details = f"[dim]new content, {seg.duration:.1f}s[/dim]"
         elif seg.kind == SegmentKind.REMOVED:
-            dur = seg.duration
-            console.print(f"{time_range}  [red]REMOVED[/red] ({dur:.1f}s)")
+            kind_str = "[red]removed[/red]"
+            details = f"[dim]{seg.duration:.1f}s[/dim]"
         elif seg.kind == SegmentKind.CHANGED:
-            corr_str = f"(correlation: {seg.correlation:.2f})" if seg.correlation else ""
-            console.print(f"{time_range}  [yellow]CHANGED[/yellow] {corr_str}")
+            kind_str = "[yellow]changed[/yellow]"
+            details = f"[dim]correlation {seg.correlation:.2f}[/dim]" if seg.correlation else ""
+        else:
+            kind_str = seg.kind.value
+            details = ""
+
+        table.add_row(f"[dim]{time_range}[/dim]", kind_str, details)
+
+    console.print(Panel(table, title="[bold]Segments[/bold]", border_style="dim"))
+    console.print()
 
 
 def _print_issues_section(console: Console, result: DiffResult) -> None:
     """Print the issues section (clipping, silence)."""
     issues = result.detection
-    has_issues = bool(issues.clips)
-
-    if not has_issues:
-        console.print("[green]No issues detected.[/green]")
+    if not issues.clips:
         return
 
-    console.print("[bold]Issues[/bold]")
+    table = Table.grid(padding=(0, 2))
+    table.add_column(min_width=10)
+    table.add_column(min_width=12)
+    table.add_column()
+
     for clip in issues.clips:
         ts = format_duration(clip.timestamp)
         ch = f"ch{clip.channel}" if clip.channel > 0 else ""
-        console.print(
-            f"  [red]Clipping[/red] in {clip.file_label} at {ts} "
-            f"({clip.sample_count} samples) {ch}"
+        table.add_row(
+            "[red]Clipping[/red]",
+            f"[dim]{clip.file_label}[/dim]",
+            f"[dim]{ts}  {ch}  ({clip.sample_count} samples)[/dim]",
         )
+
+    console.print(Panel(table, title="[bold]Issues[/bold]", border_style="red dim"))
+    console.print()
+
+
+def _print_verdict(console: Console, result: DiffResult) -> None:
+    """Print a summary verdict at the end of the report."""
+    loud = result.loudness
+    spectral_max = max((abs(b.delta_db) for b in result.spectral.bands), default=0.0)
+    has_clips = bool(result.detection.clips)
+    has_changed = any(s.kind == SegmentKind.CHANGED for s in result.temporal.segments)
+    has_added_removed = any(
+        s.kind in (SegmentKind.ADDED, SegmentKind.REMOVED) for s in result.temporal.segments
+    )
+    lufs_delta = abs(loud.lufs_delta)
+
+    if lufs_delta > 3 or spectral_max > 5 or has_added_removed or has_clips:
+        verdict = "Major differences found."
+        color = "red"
+    elif lufs_delta > 1 or spectral_max > 2 or has_changed:
+        verdict = "Significant differences found."
+        color = "yellow"
+    elif lufs_delta > 0.3 or spectral_max > 1:
+        verdict = "Minor differences detected."
+        color = "yellow"
+    else:
+        verdict = "Files are nearly identical."
+        color = "green"
+
+    console.print(Panel(f"[{color}]{verdict}[/{color}]", border_style=color))
 
 
 def _format_hz_range(low: float, high: float) -> str:

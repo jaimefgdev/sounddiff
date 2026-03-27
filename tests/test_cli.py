@@ -78,3 +78,70 @@ class TestCLI:
         )
         assert result.exit_code == 0
         assert "LUFS" in result.output
+
+    def test_ci_threshold_pass(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                str(FIXTURES_DIR / "sine_a.wav"),
+                str(FIXTURES_DIR / "sine_b.wav"),
+                "--ci",
+                "--threshold",
+                "loudness=5.0",
+            ],
+        )
+        assert result.exit_code == 0
+
+    def test_ci_threshold_fail(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                str(FIXTURES_DIR / "quiet.wav"),
+                str(FIXTURES_DIR / "loud.wav"),
+                "--ci",
+                "--threshold",
+                "loudness=0.1",
+            ],
+        )
+        assert result.exit_code == 1
+
+    def test_ci_without_threshold_errors(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                str(FIXTURES_DIR / "sine_a.wav"),
+                str(FIXTURES_DIR / "sine_b.wav"),
+                "--ci",
+            ],
+        )
+        assert result.exit_code == 2
+
+    def test_threshold_without_ci_errors(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                str(FIXTURES_DIR / "sine_a.wav"),
+                str(FIXTURES_DIR / "sine_b.wav"),
+                "--threshold",
+                "loudness=0.5",
+            ],
+        )
+        assert result.exit_code == 2
+
+    def test_ci_invalid_threshold_key(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            [
+                str(FIXTURES_DIR / "sine_a.wav"),
+                str(FIXTURES_DIR / "sine_b.wav"),
+                "--ci",
+                "--threshold",
+                "bogus=1.0",
+            ],
+        )
+        assert result.exit_code == 2
