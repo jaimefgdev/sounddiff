@@ -1,12 +1,14 @@
 # sounddiff
 
 [![CI](https://github.com/systemblueteam/sounddiff/actions/workflows/ci.yml/badge.svg)](https://github.com/systemblueteam/sounddiff/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/sounddiff)](https://pypi.org/project/sounddiff/)
-[![Python](https://img.shields.io/pypi/pyversions/sounddiff)](https://pypi.org/project/sounddiff/)
+[![PyPI version](https://img.shields.io/pypi/v/sounddiff?color=orange)](https://pypi.org/project/sounddiff/)
+[![Python versions](https://img.shields.io/pypi/pyversions/sounddiff?color=blue)](https://pypi.org/project/sounddiff/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![CodeRabbit Reviews](https://img.shields.io/coderabbit/prs/github/systemblueteam/sounddiff?utm_source=oss&utm_medium=github&utm_campaign=systemblueteam%2Fsounddiff&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)](https://coderabbit.ai)
 
 sounddiff is a CLI tool for audio producers and developers to compare two audio files and see exactly what changed. It reports differences in loudness, spectral balance, timing, and flags issues like clipping and silence. Output comes as colored terminal text, structured JSON, or a self-contained HTML report.
+
+> **New to audio?** The [sounddiff wiki](https://github.com/systemblueteam/sounddiff/wiki) has guides to LUFS, spectral analysis, clipping, and everything else sounddiff measures.
 
 ## Example
 
@@ -41,10 +43,12 @@ Issues
 ## Installation
 
 ```sh
-pip install sounddiff
+pipx install sounddiff
 ```
 
-Requires Python 3.10 or later. Supports WAV, FLAC, OGG, and AIFF natively. For MP3 and AAC support, install [ffmpeg](https://ffmpeg.org/).
+Or with pip: `pip install sounddiff`
+
+Requires Python 3.10 or later. Supports WAV, FLAC, OGG, and AIFF natively. For MP3 and AAC support, install [ffmpeg](https://ffmpeg.org/). See [docs/install.md](docs/install.md) for detailed setup.
 
 ## Usage
 
