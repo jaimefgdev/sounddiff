@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import atexit
+import contextlib
 import os
 import shutil
 import subprocess
@@ -23,22 +24,20 @@ FFMPEG_FORMATS = {".mp3", ".aac", ".m4a", ".wma", ".opus"}
 
 def _remove_if_exists(path: str) -> None:
     """Remove a file if it exists, silently ignoring missing files."""
-    try:
+    with contextlib.suppress(FileNotFoundError):
         os.remove(path)
-    except FileNotFoundError:
-        pass
 
 
 def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     """Load an audio file and return the signal and metadata.
- 
+
     Args:
         path: Path to the audio file.
- 
+
     Returns:
         Tuple of (audio signal as float64 ndarray, metadata).
         Signal is always 2D: (frames, channels). Mono files get shape (frames, 1).
- 
+
     Raises:
         FileNotFoundError: If the file does not exist.
         ValueError: If the format is unsupported or requires ffmpeg.
