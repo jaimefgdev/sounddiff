@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import atexit
+import os
+import shutil
+import subprocess
+import tempfile
 from pathlib import Path
 
 import numpy as np  # noqa: TC002 (used at runtime in return type)
@@ -39,12 +44,33 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     suffix = filepath.suffix.lower()
 
     if suffix in FFMPEG_FORMATS:
-        raise ValueError(
-            f"Format '{suffix}' requires ffmpeg, which is not installed or not supported yet. "
-            f"Supported formats without ffmpeg: {', '.join(sorted(NATIVE_FORMATS))}"
-        )
+        if not shutil.which("ffmpeg"):
+            raise ValueError(
+                f"Format '{suffix}' requires ffmpeg, but it is not installed on your system. "
+                "Please install ffmpeg to analyze compressed audio files."
+            )
+        
+        # Create a temporary WAV file for ffmpeg to write into
+        fd, temp_wav_path = tempfile.mkstemp(suffix=".wav", prefix="sounddiff_")
+        os.close(fd)
+        
+        # Schedule cleanup on exit so we never leave temp files behind
+        # Usamos p=temp_wav_path para evitar el problema de "late binding" en Python
+        atexit.register(lambda p=temp_wav_path: os.remove(p) if os.path.exists(p) else None)
+        
+        try:
+            # Transcode silently to WAV, then hand off to the normal read path below
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", str(filepath), "-loglevel", "error", temp_wav_path],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+            filepath = Path(temp_wav_path)
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError(f"FFmpeg failed to transcode '{path}': {e.stderr.decode().strip()}") from e
 
-    if suffix not in NATIVE_FORMATS:
+    if suffix not in NATIVE_FORMATS and suffix not in FFMPEG_FORMATS:
         raise ValueError(
             f"Unsupported audio format: '{suffix}'. "
             f"Supported: {', '.join(sorted(NATIVE_FORMATS | FFMPEG_FORMATS))}"
