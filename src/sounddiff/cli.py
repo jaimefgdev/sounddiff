@@ -61,16 +61,25 @@ def main(
     differences in loudness, spectral content, timing, and potential issues.
     """
     try:
-        info = sf.info(file_a)
-        duration = info.frames / info.samplerate
+        # Calculamos la duración de ambos archivos
+        info_a = sf.info(file_a)
+        duration_a = info_a.frames / info_a.samplerate
 
-        if duration > 30:
+        info_b = sf.info(file_b)
+        duration_b = info_b.frames / info_b.samplerate
+
+        # Si el MÁS LARGO de los dos supera los 30 segundos, sacamos la barra
+        if max(duration_a, duration_b) > 30:
             with Progress(transient=True) as progress:
                 progress.add_task("[cyan]Analyzing audio files...", total=None)
                 result = diff(file_a, file_b)
         else:
             result = diff(file_a, file_b)
 
+    except sf.SoundFileError as e:
+        # Capturamos el error de archivos corruptos que pedía el bot
+        click.echo(f"Error reading audio file: {e}", err=True)
+        sys.exit(1)
     except FileNotFoundError as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
