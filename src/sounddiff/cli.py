@@ -6,12 +6,15 @@ import sys
 
 import click
 import soundfile as sf
+from rich.console import Console
 from rich.progress import Progress
 
 from sounddiff import __version__
 from sounddiff.core import diff
 from sounddiff.report import render
 from sounddiff.types import OutputFormat
+
+_PROGRESS_THRESHOLD = 30
 
 
 @click.command()
@@ -60,26 +63,31 @@ def main(
     Compares FILE_A (reference) against FILE_B (comparison) and reports
     differences in loudness, spectral content, timing, and potential issues.
     """
+    # Best-effort duration probe: if sf.info() fails for either file,
+    # skip the progress bar and let diff() raise the proper error message.
+    show_progress = False
     try:
-        # Calculamos la duración de ambos archivos
         info_a = sf.info(file_a)
-        duration_a = info_a.frames / info_a.samplerate
-
         info_b = sf.info(file_b)
-        duration_b = info_b.frames / info_b.samplerate
+        longest = max(
+            info_a.frames / info_a.samplerate,
+            info_b.frames / info_b.samplerate,
+        )
+        show_progress = longest > _PROGRESS_THRESHOLD
+    except Exception:
+        pass
 
-        # Si el MÁS LARGO de los dos supera los 30 segundos, sacamos la barra
-        if max(duration_a, duration_b) > 30:
-            with Progress(transient=True) as progress:
-                progress.add_task("[cyan]Analyzing audio files...", total=None)
+    try:
+        if show_progress:
+            with Progress(
+                transient=True,
+                console=Console(no_color=no_color),
+            ) as progress:
+                progress.add_task("Analyzing audio files...", total=None)
                 result = diff(file_a, file_b)
         else:
             result = diff(file_a, file_b)
 
-    except sf.SoundFileError as e:
-        # Capturamos el error de archivos corruptos que pedía el bot
-        click.echo(f"Error reading audio file: {e}", err=True)
-        sys.exit(1)
     except FileNotFoundError as e:
         click.echo(f"Error: {e}", err=True)
         sys.exit(1)
