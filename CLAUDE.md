@@ -1,6 +1,6 @@
 # sounddiff
 
-Structured audio comparison CLI. Python 3.10+, src layout, hatchling build.
+Structured audio comparison CLI. Python 3.13+, src layout, hatchling build.
 
 Published on PyPI: `pip install sounddiff`
 
@@ -44,7 +44,7 @@ src/sounddiff/
 
 ## CI & Release
 
-- CI: lint + test on Python 3.10 and 3.13, Ubuntu only. No macOS matrix (no platform-specific code).
+- CI: one `ci` job, lint + test on Python 3.13, Ubuntu only.
 - Releases are tag-based. `git tag v0.x.0 && git push --tags` triggers build, PyPI publish (trusted publisher), and GitHub Release.
 - PyPI trusted publisher is configured. Never use API tokens for uploads.
 - CodeRabbit reviews all PRs including `.github/` files.

@@ -27,7 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sample rate mismatch warnings
 - Duration difference display in metadata section
 - Test suite with 60 tests (pytest + hypothesis)
-- CI pipeline (Python 3.10, 3.13 on Ubuntu)
+- CI pipeline (Python 3.13 on Ubuntu)
 - Documentation (install, usage, API reference, architecture)
 
 ### Fixed
