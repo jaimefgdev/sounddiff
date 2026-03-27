@@ -50,18 +50,27 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
                 f"Format '{suffix}' requires ffmpeg, but it is not installed on your system. "
                 "Please install ffmpeg to analyze compressed audio files."
             )
-        
+
         # Create a temporary WAV file for ffmpeg to write into
         fd, temp_wav_path = tempfile.mkstemp(suffix=".wav", prefix="sounddiff_")
         os.close(fd)
-        
+
         # Schedule cleanup on exit so we never leave temp files behind
         atexit.register(lambda p=temp_wav_path: os.remove(p) if os.path.exists(p) else None)
-        
+
         try:
-            # Transcode silently to WAV
+            # Transcode silently to WAV, dropping video streams (like album art) with -vn
             subprocess.run(
-                ["ffmpeg", "-y", "-i", str(original_filepath), "-loglevel", "error", temp_wav_path],
+                [
+                    "ffmpeg",
+                    "-y",
+                    "-i",
+                    str(original_filepath),
+                    "-vn",
+                    "-loglevel",
+                    "error",
+                    temp_wav_path,
+                ],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -69,7 +78,9 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
             # We will read from the temp file, but keep the original path for metadata
             read_filepath = Path(temp_wav_path)
         except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"FFmpeg failed to transcode '{path}': {e.stderr.decode().strip()}") from e
+            raise RuntimeError(
+                f"FFmpeg failed to transcode '{path}': {e.stderr.decode().strip()}"
+            ) from e
 
     if suffix not in NATIVE_FORMATS and suffix not in FFMPEG_FORMATS:
         raise ValueError(
@@ -85,7 +96,7 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     data, sample_rate = sf.read(str(read_filepath), dtype="float64", always_2d=True)
 
     metadata = AudioMetadata(
-        path=str(original_filepath),  # <-- AQUI ESTA LA MAGIA (mantenemos el nombre original)
+        path=str(original_filepath),
         duration=len(data) / sample_rate,
         sample_rate=sample_rate,
         channels=data.shape[1],
