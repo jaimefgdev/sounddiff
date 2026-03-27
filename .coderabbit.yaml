@@ -24,7 +24,7 @@ reviews:
   path_instructions:
     - path: "src/sounddiff/**/*.py"
       instructions: |
-        sounddiff is a Python 3.10+ CLI tool for structured audio comparison.
+        sounddiff is a Python 3.13+ CLI tool for structured audio comparison.
         Uses numpy, scipy, pyloudnorm for DSP. Click for CLI. Rich for terminal output.
         mypy strict mode. Ruff for linting and formatting.
 
