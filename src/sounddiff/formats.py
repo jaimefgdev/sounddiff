@@ -36,12 +36,13 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         ValueError: If the format is unsupported or requires ffmpeg.
         RuntimeError: If the file cannot be read.
     """
-    filepath = Path(path)
+    original_filepath = Path(path)
+    read_filepath = original_filepath
 
-    if not filepath.exists():
-        raise FileNotFoundError(f"File not found: {filepath}")
+    if not original_filepath.exists():
+        raise FileNotFoundError(f"File not found: {original_filepath}")
 
-    suffix = filepath.suffix.lower()
+    suffix = original_filepath.suffix.lower()
 
     if suffix in FFMPEG_FORMATS:
         if not shutil.which("ffmpeg"):
@@ -55,18 +56,18 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         os.close(fd)
         
         # Schedule cleanup on exit so we never leave temp files behind
-        # Usamos p=temp_wav_path para evitar el problema de "late binding" en Python
         atexit.register(lambda p=temp_wav_path: os.remove(p) if os.path.exists(p) else None)
         
         try:
-            # Transcode silently to WAV, then hand off to the normal read path below
+            # Transcode silently to WAV
             subprocess.run(
-                ["ffmpeg", "-y", "-i", str(filepath), "-loglevel", "error", temp_wav_path],
+                ["ffmpeg", "-y", "-i", str(original_filepath), "-loglevel", "error", temp_wav_path],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
-            filepath = Path(temp_wav_path)
+            # We will read from the temp file, but keep the original path for metadata
+            read_filepath = Path(temp_wav_path)
         except subprocess.CalledProcessError as e:
             raise RuntimeError(f"FFmpeg failed to transcode '{path}': {e.stderr.decode().strip()}") from e
 
@@ -77,14 +78,14 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         )
 
     try:
-        info = sf.info(str(filepath))
+        info = sf.info(str(read_filepath))
     except RuntimeError as e:
-        raise RuntimeError(f"Cannot read audio file: {filepath} ({e})") from e
+        raise RuntimeError(f"Cannot read audio file: {read_filepath} ({e})") from e
 
-    data, sample_rate = sf.read(str(filepath), dtype="float64", always_2d=True)
+    data, sample_rate = sf.read(str(read_filepath), dtype="float64", always_2d=True)
 
     metadata = AudioMetadata(
-        path=str(filepath),
+        path=str(original_filepath),  # <-- AQUI ESTA LA MAGIA (mantenemos el nombre original)
         duration=len(data) / sample_rate,
         sample_rate=sample_rate,
         channels=data.shape[1],
