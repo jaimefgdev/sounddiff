@@ -46,7 +46,6 @@ src/sounddiff/
 - Releases are tag-based. `git tag v0.x.0 && git push --tags` triggers build, PyPI publish (trusted publisher), and GitHub Release.
 - PyPI trusted publisher is configured. Never use API tokens for uploads.
 - CodeRabbit reviews all PRs including `.github/` files.
-- Sentry Seer reviews PRs. No Sentry release workflow (CLI tool, no deployed infra).
 
 ## Key dependencies
 
