@@ -34,6 +34,7 @@ class AudioMetadata:
     bit_depth: int | None
     format_name: str
     frames: int
+    file_size: int | None = None
 
 
 @dataclass(frozen=True)
