@@ -21,6 +21,14 @@ NATIVE_FORMATS = {".wav", ".flac", ".ogg", ".aiff", ".aif"}
 FFMPEG_FORMATS = {".mp3", ".aac", ".m4a", ".wma", ".opus"}
  
  
+def _remove_if_exists(path: str) -> None:
+    """Remove a file if it exists, silently ignoring missing files."""
+    try:
+        os.remove(path)
+    except FileNotFoundError:
+        pass
+ 
+ 
 def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     """Load an audio file and return the signal and metadata.
  
@@ -56,7 +64,7 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
         os.close(fd)
  
         # Schedule cleanup on exit so we never leave temp files behind
-        atexit.register(lambda p: os.remove(p) if os.path.exists(p) else None, temp_wav_path)
+        atexit.register(_remove_if_exists, temp_wav_path)
  
         try:
             # Transcode silently to WAV, dropping video streams (like album art) with -vn
@@ -89,10 +97,9 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
  
     try:
         info = sf.info(str(read_filepath))
+        data, sample_rate = sf.read(str(read_filepath), dtype="float64", always_2d=True)
     except RuntimeError as e:
-        raise RuntimeError(f"Cannot read audio file: {read_filepath} ({e})") from e
- 
-    data, sample_rate = sf.read(str(read_filepath), dtype="float64", always_2d=True)
+        raise RuntimeError(f"Cannot read audio file: {original_filepath} ({e})") from e
  
     metadata = AudioMetadata(
         path=str(original_filepath),
@@ -135,3 +142,4 @@ def format_channels(n: int) -> str:
     if n == 2:
         return "stereo"
     return f"{n}ch"
+ 
