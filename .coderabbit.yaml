@@ -2,6 +2,10 @@
 # sounddiff — Python CLI for structured audio comparison
 inheritance: true
 
+chat:
+  auto_reply: true
+  allow_non_org_members: false
+
 reviews:
   request_changes_workflow: true
   profile: assertive
