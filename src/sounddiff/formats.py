@@ -15,6 +15,15 @@ NATIVE_FORMATS = {".wav", ".flac", ".ogg", ".aiff", ".aif"}
 # Formats that require ffmpeg
 FFMPEG_FORMATS = {".mp3", ".aac", ".m4a", ".wma", ".opus"}
 
+# Mapping for original format display names in metadata
+FORMAT_DISPLAY_NAMES = {
+    ".mp3": "MP3",
+    ".aac": "AAC",
+    ".m4a": "AAC",
+    ".wma": "WMA",
+    ".opus": "Opus",
+}
+
 
 def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
     """Load an audio file and return the signal and metadata.
@@ -57,13 +66,19 @@ def load_audio(path: str | Path) -> tuple[np.ndarray, AudioMetadata]:
 
     data, sample_rate = sf.read(str(filepath), dtype="float64", always_2d=True)
 
+    if original_filepath != read_filepath:
+        ext = original_filepath.suffix.lower()
+        display_format = FORMAT_DISPLAY_NAMES.get(ext, ext.lstrip('.').upper())
+    else:
+        display_format = info.format
+
     metadata = AudioMetadata(
         path=str(filepath),
         duration=len(data) / sample_rate,
         sample_rate=sample_rate,
         channels=data.shape[1],
         bit_depth=_subtype_to_bits(info.subtype),
-        format_name=info.format,
+        format_name=display_format,
         frames=len(data),
     )
 
