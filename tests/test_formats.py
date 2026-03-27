@@ -62,11 +62,12 @@ class TestLoadAudio:
         fake_mp3.write_text("fake audio content")
 
         # 2. Simulamos que ffmpeg existe y que la lectura del WAV temporal funciona
-        with patch("sounddiff.formats.shutil.which", return_value="ffmpeg"), \
-             patch("sounddiff.formats.subprocess.run"), \
-             patch("sounddiff.formats.sf.info") as mock_info, \
-             patch("sounddiff.formats.sf.read") as mock_read:
-
+        with (
+            patch("sounddiff.formats.shutil.which", return_value="ffmpeg"),
+            patch("sounddiff.formats.subprocess.run"),
+            patch("sounddiff.formats.sf.info") as mock_info,
+            patch("sounddiff.formats.sf.read") as mock_read,
+        ):
             # Configuramos el mock para simular lo que devolvería el WAV temporal
             class MockInfo:
                 format = "WAV"
